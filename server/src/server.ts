@@ -1,13 +1,15 @@
+import chalk from "chalk";
+import cookieParser from "cookie-parser";
 import cors from "cors";
 import dotenv from "dotenv";
-import express, { Request, Response } from "express";
+import express from "express";
 import http from "http";
+import redoc from "redoc-express";
 import { Server } from "socket.io";
-import authRoutes from "./routes/auth";
+import authRoutes from "./routes/authRoutes";
 import { connectDB } from "./services/db";
 import { initSocket } from "./services/socket";
-import cookieParser from "cookie-parser";
-import chalk from "chalk";
+import { swaggerSpec } from "./utils/swagger";
 
 dotenv.config();
 
@@ -42,14 +44,14 @@ const io = new Server(server, { cors: { origin: "*" } })
 
 app.use("/api/auth", authRoutes);
 
-// Health check route
-app.get('/health', (req: Request, res: Response) => {
-    res.status(200).json({
-        status: "UP",
-        timestamp: new Date().toISOString(),
-    });
-});
+// Serve OpenAPI JSON
+app.get("/swagger.json", (req, res) => { res.json(swaggerSpec) });
 
+// Setup Redoc
+app.get("/redoc", redoc({
+    title: "Chat App API Docs",
+    specUrl: "/swagger.json"
+}));
 
 initSocket(io);
 
